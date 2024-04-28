@@ -1,0 +1,48 @@
+CREATE CONSTRAINT FOR (p:Paper) REQUIRE p.id Is UNique
+CREATE CONSTRAINT FOR (a:Author) REQUIRE a.name Is UNIQUE
+CREATE CONSTRAINT FOR (c:Classification) REQUIRE c.name Is UNIQUE
+
+
+
+call db.schema.visualization
+
+LOAD CSV WITH HEADERS FROM
+'https://raw.githubusercontent.com/ngshya/datasets/master/cora/cora_content.csv'
+AS line FIELDTERMINATOR ','
+CREATE (:Paper {id: line.paper_id, class: line.label})
+
+
+LOAD CSV WITH HEADERS FROM
+'https://raw.githubusercontent.com/ngshya/datasets/master/cora/cora_cites.csv'
+AS line FIELDTERMINATOR ','
+MATCH (citing_paper:Paper {id: line.citing_paper_id}),(cited_paper:Paper {id: line.cited_paper_id})
+CREATE (citing_paper)-[:CITES]->(cited_paper)
+
+MATCH (p:Paper) RETURN DISTINCT p.class ORDER BY p.class
+
+MATCH p=()-[r:CITES]->() RETURN p
+
+
+Step. 1]
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/ngshya/datasets/master/cora/cora_content.csv' AS line FIELDTERMINATOR ','
+MERGE (c:Classification {name: line.label})
+
+Step. 2]
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/ngshya/datasets/master/cora/cora_content.csv' AS line FIELDTERMINATOR ','
+MATCH (p:Paper {id: line.paper_id})
+MERGE (c:Classification {name: line.label})
+MERGE (p)-[:HAS_CLASSIFICATION]->(c)
+
+Step. 3]
+MATCH (c:Classification)--(p:Paper)
+RETURN c.name AS ClassificationName, p.id AS PaperID
+LIMIT 10
+
+
+To check whether there is self loop or not:-
+MATCH (p:Paper)-[r:CITES]->(p)
+RETURN p.id AS PaperID
+
+
+
+
